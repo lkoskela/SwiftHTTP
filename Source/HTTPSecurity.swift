@@ -119,9 +119,9 @@ public class HTTPSecurity {
         }
         var policy: SecPolicyRef
         if self.validatedDN {
-            policy = SecPolicyCreateSSL(true, domain)
+            policy = SecPolicyCreateSSL(true, domain)!
         } else {
-            policy = SecPolicyCreateBasicX509()
+            policy = SecPolicyCreateBasicX509()!
         }
         SecTrustSetPolicies(trust,policy)
         if self.usePublicKeys {
@@ -147,10 +147,10 @@ public class HTTPSecurity {
                 collect.append(SecCertificateCreateWithData(nil,cert)!)
             }
             SecTrustSetAnchorCertificates(trust,collect)
-            var result: SecTrustResultType = 0
+            var result: SecTrustResultType = .Unspecified
             SecTrustEvaluate(trust,&result)
-            let r = Int(result)
-            if r == kSecTrustResultUnspecified || r == kSecTrustResultProceed {
+            let r = result
+            if r == SecTrustResultType.Unspecified || r == SecTrustResultType.Proceed {
                 var trustedCount = 0
                 for serverCert in serverCerts {
                     for cert in certs {
@@ -178,7 +178,7 @@ public class HTTPSecurity {
     func extractPublicKey(data: NSData) -> SecKeyRef? {
         let possibleCert = SecCertificateCreateWithData(nil,data)
         if let cert = possibleCert {
-            return extractPublicKeyFromCert(cert, policy: SecPolicyCreateBasicX509())
+            return extractPublicKeyFromCert(cert, policy: SecPolicyCreateBasicX509()!)
         }
         return nil
     }
@@ -194,7 +194,7 @@ public class HTTPSecurity {
         var possibleTrust: SecTrust?
         SecTrustCreateWithCertificates(cert, policy, &possibleTrust)
         if let trust = possibleTrust {
-            var result: SecTrustResultType = 0
+            var result: SecTrustResultType = .Unspecified
             SecTrustEvaluate(trust, &result)
             return SecTrustCopyPublicKey(trust)
         }
@@ -229,7 +229,7 @@ public class HTTPSecurity {
         let policy = SecPolicyCreateBasicX509()
         for i in 0 ..< SecTrustGetCertificateCount(trust) {
             let cert = SecTrustGetCertificateAtIndex(trust,i)
-            if let key = extractPublicKeyFromCert(cert!, policy: policy) {
+            if let key = extractPublicKeyFromCert(cert!, policy: policy!) {
                 collect.append(key)
             }
         }
